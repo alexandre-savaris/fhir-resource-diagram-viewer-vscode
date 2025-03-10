@@ -16,6 +16,10 @@
       {
         "command": "fhir-resource-diagram-viewer-vscode.viewContent",
         "title": "fhir-resource-diagram-viewer-vscode: View the resource content as a diagram"
+      },
+      {
+        "command": "fhir-resource-diagram-viewer-vscode.viewReferences",
+        "title": "fhir-resource-diagram-viewer-vscode: View the resource references as a diagram"
       }
     ]
   },

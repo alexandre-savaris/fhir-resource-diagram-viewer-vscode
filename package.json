@@ -38,7 +38,7 @@
       },
       {
         "command": "fhir-resource-diagram-viewer-vscode.viewReferences",
-        "title": "fhir-resource-diagram-viewer-vscode: View the resource references as a diagram"
+        "title": "fhir-resource-diagram-viewer-vscode: View resource references as a diagram"
       }
     ]
   },

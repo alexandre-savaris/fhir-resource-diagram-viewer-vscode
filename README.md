@@ -1,71 +1,26 @@
-# fhir-resource-diagram-viewer-vscode README
+# fhir-resource-diagram-viewer-vscode
+A VS Code extension for viewing FHIR® resource instances as diagrams.
 
-This is the README for your extension "fhir-resource-diagram-viewer-vscode". After writing up a brief description, we recommend including the following sections.
+## Dependencies
+[PlantUML extension](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml)
 
-## Features
+## Usage
+1. Open up a JSON file with the resource content;
+2. Execute one of the extension commands by using the Command Palette ("View/Command Palette..." or Ctrl+Shift+P):
+    * "fhir-resource-diagram-viewer-vscode: View the resource content as a diagram" (for viewing all attributes);
+    * "fhir-resource-diagram-viewer-vscode: View resource references as a diagram" (for viewing the "resourceType" attribute, the "id" attribute, and attributes with references);
+3. View the PlantUML code and diagram generated from the original content.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+![Extension usage](resources/images/extension_usage.gif)
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Notes
+The extension expects the JSON representation of a resource instance's content, not its XML or Turtle versions.
 
 ## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
+The state (i.e. the values filled in the extension fields) are saved internally by the extension whenever the button "Generate" is clicked. If you change the editor tab without clicking the button, the values informed since the last click on the same button will be lost.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Initial release.

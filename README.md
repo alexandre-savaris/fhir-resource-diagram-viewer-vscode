@@ -16,9 +16,6 @@ A VS Code extension for viewing FHIR® resource instances as diagrams.
 ## Notes
 The extension expects the JSON representation of a resource instance's content, not its XML or Turtle versions.
 
-## Known Issues
-The state (i.e. the values filled in the extension fields) are saved internally by the extension whenever the button "Generate" is clicked. If you change the editor tab without clicking the button, the values informed since the last click on the same button will be lost.
-
 ## Release Notes
 
 ### 1.0.0

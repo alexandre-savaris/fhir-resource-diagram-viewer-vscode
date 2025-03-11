@@ -36,14 +36,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 					let plantUmlExt = vscode.extensions.getExtension('jebbs.plantuml');
 					if (plantUmlExt) {
-						let importedApi = plantUmlExt.exports;
 						// Create a new document with the generated content.
 						vscode.workspace.openTextDocument({
 							content: processResult,
 							language: 'txt'
 						}).then(newDocument => {
 							vscode.window.showTextDocument(
-								newDocument
+								newDocument, {
+									viewColumn: vscode.ViewColumn.Beside
+								}
 							).then(textEditor => {
 								vscode.commands.executeCommand('plantuml.preview');
 							});
@@ -86,14 +87,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 					let plantUmlExt = vscode.extensions.getExtension('jebbs.plantuml');
 					if (plantUmlExt) {
-						let importedApi = plantUmlExt.exports;
 						// Create a new document with the generated content.
 						vscode.workspace.openTextDocument({
 							content: processResult,
 							language: 'txt'
 						}).then(newDocument => {
 							vscode.window.showTextDocument(
-								newDocument
+								newDocument, {
+									viewColumn: vscode.ViewColumn.Beside
+								}
 							).then(textEditor => {
 								vscode.commands.executeCommand('plantuml.preview');
 							});
@@ -131,7 +133,7 @@ function processResourceReferences(jsonContent: any) {
 	for (const [key, value] of Object.entries(jsonContent)) {
 
 		// Keep the 'resourceType' key, or any 'reference' key.
-		if (key === 'resourceType' || key === 'reference') {
+		if (key === 'resourceType' || key === 'id' || key === 'reference') {
 			continue;
 		}
 

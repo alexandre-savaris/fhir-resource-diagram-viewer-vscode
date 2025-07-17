@@ -21,7 +21,11 @@ Your task is to analyze the content of a FHIR resource, extract relevant informa
 The content is provided in JSON format.
 The summaries must be formatted using markdown syntax.
 The analyses listed bellow must be executed in order. If it's not possible to execute an analysis, you must inform the user about the reasons.
-1. Analyze the resource content and, based on its structure, identity the FHIR release the resource conforms to (example: STU3, R4, R5).
+If the "resourceType" of the main JSON object is different from "Bundle", perform the following analyses.
+1. Analyze the resource content and, based on its structure, identity the FHIR release the resource conforms to. Answer only with the FHIR release and with the rationale for your choice.
+2. If the resource does not contain a narrative (e.g. the "text" attribute), generate one based on its content. The narrative must be in XHTML, and it must include only the attributes whose type is not "Reference" and that the FHIR release of the resource specify as part of summaries.
+If the "resourceType" of the main JSON object is equal to "Bundle", perform the following analyses.
+1. Analyze the bundle content and, based on its structure, identity the FHIR release the component resources conform to. Answer only with the FHIR release and with the rationale for your choice.
 `;
 
 		// If there is an active text editor, use it.
@@ -39,51 +43,14 @@ The analyses listed bellow must be executed in order. If it's not possible to ex
 				let processResult = null;
 				if (jsonContent['resourceType']) {
 
-					// select the 4o chat model
-					let [model] = await vscode.lm.selectChatModels({
-						vendor: 'copilot',
-						family: 'gpt-4o'
-					});
-					// init the chat message
-					const messages = [
-						vscode.LanguageModelChatMessage.User(ANALYSIS_PROMPT),
-						vscode.LanguageModelChatMessage.User(documentText)
-					];
-					// make sure the model is available
-					if (model) {
-						// send the messages array to the model and get the response
-						let chatResponse = await model.sendRequest(
-							messages,
-							{},
-							new vscode.CancellationTokenSource().token
-						);
-						// show the response
-						let fullResponse = '';
-						for await (const fragment of chatResponse.text) {
-							fullResponse += fragment;
-						}
-						if (fullResponse.length > 0) {
-							// Create a new document with the generated content.
-							vscode.workspace.openTextDocument({
-								content: fullResponse,
-								language: 'md'
-							}).then(newDocument => {
-								vscode.window.showTextDocument(
-									newDocument, {
-										viewColumn: vscode.ViewColumn.Beside
-									}
-								);
-							});
-						}
-					}
-
 					// Process the resource content.
 					processResult = processResourceContent(jsonContent);
 
 					let plantUmlExt = vscode.extensions.getExtension('jebbs.plantuml');
 					if (plantUmlExt) {
+
 						// Create a new document with the generated content.
-						vscode.workspace.openTextDocument({
+						await vscode.workspace.openTextDocument({
 							content: processResult,
 							language: 'txt'
 						}).then(newDocument => {
@@ -95,6 +62,45 @@ The analyses listed bellow must be executed in order. If it's not possible to ex
 								vscode.commands.executeCommand('plantuml.preview');
 							});
 						});
+
+						// select the 4o chat model
+						let [model] = await vscode.lm.selectChatModels({
+							vendor: 'copilot',
+							family: 'gpt-4o'
+						});
+						// init the chat message
+						const messages = [
+							vscode.LanguageModelChatMessage.User(ANALYSIS_PROMPT),
+							vscode.LanguageModelChatMessage.User(documentText)
+						];
+						// make sure the model is available
+						if (model) {
+							// send the messages array to the model and get the response
+							let chatResponse = await model.sendRequest(
+								messages,
+								{},
+								new vscode.CancellationTokenSource().token
+							);
+							// show the response
+							let fullResponse = '';
+							for await (const fragment of chatResponse.text) {
+								fullResponse += fragment;
+							}
+							if (fullResponse.length > 0) {
+								// Create a new document with the generated content.
+								vscode.workspace.openTextDocument({
+									content: fullResponse,
+									language: 'md'
+								}).then(newDocument => {
+									vscode.window.showTextDocument(
+										newDocument, {
+											viewColumn: vscode.ViewColumn.Beside
+										}
+									);
+								});
+							}
+						}
+
 					} else {
 						vscode.window.showErrorMessage("The extension 'jebbs.plantuml' couldn't be opened!");
 					}

@@ -13,11 +13,8 @@ A VS Code extension for viewing FHIR® resource instances as diagrams.
 
 ![Extension usage](resources/images/extension_usage.gif)
 
-## Notes
-The extension expects the JSON representation of a resource instance's content, not its XML or Turtle versions.
-
 ## Release Notes
 
 ### 1.0.0
 
-Initial release.
+- Initial release.

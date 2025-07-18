@@ -16,14 +16,15 @@ export function activate(context: vscode.ExtensionContext) {
 	const disposable = vscode.commands.registerCommand('fhir-resource-diagram-viewer-vscode.viewContent', async () => {
 		// The code you place here will be executed every time your command is executed
 
-		const ANALYSIS_PROMPT = `You are a FHIR resource content analyzer.
-Your task is to analyze the content of a FHIR resource, extract relevant information, and generate summaries from your evaluation.
-The content is provided in JSON format.
-The summaries must be formatted using markdown syntax.
+		const ANALYSIS_PROMPT = `
+You are a FHIR resource content analyzer.
+Your task is to analyze the content of a FHIR resource, extract relevant information, and generate a report from your evaluation.
+The resource content is provided in JSON format.
+The resulting report must be formatted using markdown syntax.
 The analyses listed bellow must be executed in order. If it's not possible to execute an analysis, you must inform the user about the reasons.
 If the "resourceType" of the main JSON object is different from "Bundle", perform the following analyses.
-1. Analyze the resource content and, based on its structure, identity the FHIR release the resource conforms to. Answer only with the FHIR release and with the rationale for your choice.
-2. If the resource does not contain a narrative (e.g. the "text" attribute), generate one based on its content. The narrative must be in XHTML, and it must include only the attributes whose type is not "Reference" and that the FHIR release of the resource specify as part of summaries.
+1. Analyze the resource content and, based on its structure, identify the FHIR release the resource conforms to. Answer only with the FHIR release and with the rationale for your choice.
+2. If the resource does not contain a narrative (e.g., the "text" attribute), generate one based on its content. The generated narrative must exclude all attributes whose "ElementDefinition.type" = "Reference" in the FHIR release the resource conforms to. From the remainder attributes, the generated narrative must include only the ones whose "ElementDefinition.isSummary" = true in the FHIR release the resource conforms to.
 If the "resourceType" of the main JSON object is equal to "Bundle", perform the following analyses.
 1. Analyze the bundle content and, based on its structure, identity the FHIR release the component resources conform to. Answer only with the FHIR release and with the rationale for your choice.
 `;

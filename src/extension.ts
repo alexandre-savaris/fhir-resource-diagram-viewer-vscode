@@ -83,22 +83,30 @@ If the "resourceType" of the main JSON object is equal to "Bundle", perform the 
 								new vscode.CancellationTokenSource().token
 							);
 							// show the response
-							let fullResponse = '';
+							let iteractionNumber = 0;
+							let textDocument = null;
 							for await (const fragment of chatResponse.text) {
-								fullResponse += fragment;
-							}
-							if (fullResponse.length > 0) {
-								// Create a new document with the generated content.
-								vscode.workspace.openTextDocument({
-									content: fullResponse,
-									language: 'md'
-								}).then(newDocument => {
-									vscode.window.showTextDocument(
-										newDocument, {
+								iteractionNumber++;
+								if (iteractionNumber === 1) {
+									// Create a new document with the generated content.
+									textDocument = await vscode.workspace.openTextDocument({
+										content: fragment,
+										language: 'md'
+									});
+									await vscode.window.showTextDocument(
+										textDocument, {
 											viewColumn: vscode.ViewColumn.Beside
 										}
 									);
-								});
+								}
+								else {
+									// Append the fragment to the existing document.
+									if (textDocument) {
+										const edit = new vscode.WorkspaceEdit();
+										edit.insert(textDocument.uri, new vscode.Position(textDocument.lineCount, 0), fragment);
+										await vscode.workspace.applyEdit(edit);
+									}
+								}
 							}
 						}
 

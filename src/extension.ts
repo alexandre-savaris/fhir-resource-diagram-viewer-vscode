@@ -115,6 +115,10 @@ The analyses listed bellow must be executed in order. If it's not possible to ex
 									}
 								}
 							}
+							// Open the markdown preview for the document.
+							if (textDocument) {
+								await vscode.commands.executeCommand("markdown.showPreview", textDocument.uri);
+							}
 						}
 
 					} else {

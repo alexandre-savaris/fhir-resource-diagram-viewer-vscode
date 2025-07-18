@@ -27,10 +27,12 @@ The analyses listed bellow must be executed in order. If it's not possible to ex
 		const SINGLE_RESOURCE_PROMPT_FRAGMENT = `
 1. Analyze the resource content and, based on its structure, identify the FHIR release the resource conforms to. Answer only with the FHIR release and with the rationale for your choice.
 2. If the resource does not contain a narrative (e.g., the "text" attribute), generate one based on its content. The generated narrative must exclude all attributes whose "ElementDefinition.type" = "Reference" in the FHIR release the resource conforms to. From the remainder attributes, the generated narrative must include only the ones whose "ElementDefinition.isSummary" = true in the FHIR release the resource conforms to.
+3. Identify all resource attributes that may refer to a terminology (i.e., attributes where "ElementDefinition.type" = "Coding" or "ElementDefinition.type" = "CodeableConcept" in the FHIR release the resource conforms to). From these attributes, select those that don't present a "text" or a "display" and try to find the corresponding meaning for the combination of "system" and "code". Include the findings in the generated narrative.
 `;
 		const RESOURCE_BUNDLE_PROMPT_FRAGMENT = `
 1. Analyze the bundle content and, based on its structure, identify the FHIR release the component resources conform to. Answer only with the FHIR release and with the rationale for your choice.
 2. For each one of the resource instances that compose the Bundle: If the resource instance does not contain a narrative (e.g., the "text" attribute), generate one based on its content. The generated narrative must exclude all attributes whose "ElementDefinition.type" = "Reference" in the FHIR release the resource conforms to. From the remainder attributes, the generated narrative must include only the ones whose "ElementDefinition.isSummary" = true in the FHIR release the resource conforms to.
+3. For each one of the resource instances that compose the Bundle: Identify all resource attributes that may refer to a terminology (i.e., attributes where "ElementDefinition.type" = "Coding" or "ElementDefinition.type" = "CodeableConcept" in the FHIR release the resource conforms to). From these attributes, select those that don't present a "text" or a "display" and try to find the corresponding meaning for the combination of "system" and "code". Include the findings in the generated narrative.
 `;
 
 		// If there is an active text editor, use it.

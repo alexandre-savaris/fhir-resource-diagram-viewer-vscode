@@ -39,6 +39,10 @@
       {
         "command": "fhir-resource-diagram-viewer-vscode.viewReferences",
         "title": "fhir-resource-diagram-viewer-vscode: View resource references as a diagram"
+      },
+      {
+        "command": "fhir-resource-diagram-viewer-vscode.analyzeContent",
+        "title": "fhir-resource-diagram-viewer-vscode: Analyze the resource content using an LLM"
       }
     ]
   },

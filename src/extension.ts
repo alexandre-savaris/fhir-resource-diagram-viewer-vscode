@@ -16,106 +16,16 @@ export function activate(context: vscode.ExtensionContext) {
 	const disposable = vscode.commands.registerCommand('fhir-resource-diagram-viewer-vscode.viewContent', async () => {
 		// The code you place here will be executed every time your command is executed
 
-		// Retrieve the first text editor.
-		const firstTextEditor = getFirstTextEditor();
-
-		// If the editor exists, use it.
-		if (firstTextEditor) {
-
-			// Retrieve content from the active text editor.
-			const documentText = firstTextEditor.document.getText();
-
-			try {
-
-				// Parse the retrieved content as JSON.
-				const jsonContent = JSON.parse(documentText);
-
-				// Proceed only if the JSON content has a 'resourceType' key.
-				let processResult = null;
-				if (jsonContent['resourceType']) {
-
-					// Process the resource content.
-					processResult = processResourceContent(jsonContent);
-
-					let plantUmlExt = vscode.extensions.getExtension('jebbs.plantuml');
-					if (plantUmlExt) {
-
-						// Create a new document with the generated content.
-						await vscode.workspace.openTextDocument({
-							content: processResult,
-							language: 'txt'
-						}).then(newDocument => {
-							vscode.window.showTextDocument(
-								newDocument, {
-									viewColumn: vscode.ViewColumn.Beside
-								}
-							).then(textEditor => {
-								vscode.commands.executeCommand('plantuml.preview');
-							});
-						});
-
-					} else {
-						vscode.window.showErrorMessage("The extension 'jebbs.plantuml' couldn't be opened!");
-					}
-
-				}
-
-			} catch(e: any) {
-				vscode.window.showErrorMessage(e.message);
-			}
-		}
+		await generateDiagram("resource");
 	});
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	const disposable2 = vscode.commands.registerCommand('fhir-resource-diagram-viewer-vscode.viewReferences', () => {
+	const disposable2 = vscode.commands.registerCommand('fhir-resource-diagram-viewer-vscode.viewReferences', async () => {
 		// The code you place here will be executed every time your command is executed
 
-		// Retrieve the first text editor.
-		const firstTextEditor = getFirstTextEditor();
-
-		if (firstTextEditor) {
-
-			// Retrieve content from the active text editor.
-			const documentText = firstTextEditor.document.getText();
-
-			try {
-
-				// Parse the retrieved content as JSON.
-				const jsonContent = JSON.parse(documentText);
-
-				let processResult = null;
-				if (jsonContent['resourceType']) {
-
-					// Process the resource content.
-					processResult = processResourceReferences(jsonContent);
-
-					let plantUmlExt = vscode.extensions.getExtension('jebbs.plantuml');
-					if (plantUmlExt) {
-						// Create a new document with the generated content.
-						vscode.workspace.openTextDocument({
-							content: processResult,
-							language: 'txt'
-						}).then(newDocument => {
-							vscode.window.showTextDocument(
-								newDocument, {
-									viewColumn: vscode.ViewColumn.Beside
-								}
-							).then(textEditor => {
-								vscode.commands.executeCommand('plantuml.preview');
-							});
-						});
-					} else {
-						vscode.window.showErrorMessage("The extension 'jebbs.plantuml' couldn't be opened!");
-					}
-
-				}
-
-			} catch(e: any) {
-				vscode.window.showErrorMessage(e.message);
-			}
-		}
+		await generateDiagram("references");
 	});
 
 	// The command has been defined in the package.json file
@@ -127,42 +37,35 @@ export function activate(context: vscode.ExtensionContext) {
 		// Common prompt fragment.
 		const COMMON_PROMPT_FRAGMENT = `
 You are a FHIR resource content analyzer.
-Your task is to analyze the content of a FHIR resource, extract relevant information, and generate a report from your analysis.
+Your task is to analyze the content of a FHIR resource, extract relevant information, and generate a report for your analysis.
 The resource content is provided in JSON format.
 The resulting report must be formatted using markdown syntax.
 The analyses listed bellow must be executed in order. If it's not possible to execute an specific analysis, you must inform the user about the reasons.
 `;
 		// Prompt fragment for single resources.
 		const SINGLE_RESOURCE_PROMPT_FRAGMENT = `
-1. Analyze the resource content and, based on its structure, identify the FHIR release the resource conforms to. Answer only with the FHIR release and with the rationale for your choice.
-2. If the resource does not contain a narrative (e.g., the "text" attribute), generate one based on its content. The generated narrative must exclude all attributes whose "ElementDefinition.type" = "Reference" in the FHIR release the resource conforms to. From the remainder attributes, the generated narrative must include only the ones whose "ElementDefinition.isSummary" = true in the FHIR release the resource conforms to.
-3. Identify all resource attributes that may refer to a terminology (i.e., attributes where "ElementDefinition.type" = "Coding" or "ElementDefinition.type" = "CodeableConcept" in the FHIR release the resource conforms to). From these attributes, select those that don't present a "text" or a "display" and try to find the corresponding meaning for the combination of "system" and "code". Include the findings in the generated narrative.
+1. Analyze the resource content and, based on its structure, identify the FHIR release the resource conforms to. Answer only with the FHIR release and the rationale for your choice.
+2. If the resource does not contain a narrative (e.g., the "text" attribute), generate one based on its content. The generated narrative must exclude all attributes whose "ElementDefinition.type" = "Reference" in the FHIR release the resource conforms to. From the remainder attributes, the generated narrative must include only the ones whose "ElementDefinition.isSummary" = "true" in the FHIR release the resource conforms to.
+3. Identify all resource attributes that may refer to a terminology (i.e., attributes where "ElementDefinition.type" = "Coding" or "ElementDefinition.type" = "CodeableConcept") in the FHIR release the resource conforms to. From these attributes, select those that don't present a "text" or a "display" and try to find the corresponding meaning for the combination of "system" and "code".
+4. Identify all resource attributes whose values are references to other resource instances (i.e., attributes where "ElementDefinition.type" = "Reference") in the FHIR release the resource conforms to. Count the number of references that conform to each resource type. Calculate the percentage of each resource type.
 `;
 		// Prompt fragment for bundles.
 		const RESOURCE_BUNDLE_PROMPT_FRAGMENT = `
-1. Analyze the bundle content and, based on its structure, identify the FHIR release the component resources conform to. Answer only with the FHIR release and with the rationale for your choice.
+1. Analyze the bundle content and, based on its structure, identify the FHIR release the component resources conform to. Answer only with the FHIR release and the rationale for your choice.
 2. For each one of the resource instances that compose the Bundle: If the resource instance does not contain a narrative (e.g., the "text" attribute), generate one based on its content. The generated narrative must exclude all attributes whose "ElementDefinition.type" = "Reference" in the FHIR release the resource conforms to. From the remainder attributes, the generated narrative must include only the ones whose "ElementDefinition.isSummary" = true in the FHIR release the resource conforms to.
-3. For each one of the resource instances that compose the Bundle: Identify all resource attributes that may refer to a terminology (i.e., attributes where "ElementDefinition.type" = "Coding" or "ElementDefinition.type" = "CodeableConcept" in the FHIR release the resource conforms to). From these attributes, select those that don't present a "text" or a "display" and try to find the corresponding meaning for the combination of "system" and "code". Include the findings in the generated narrative.
+3. For each one of the resource instances present in the "entry" attribute: Identify all resource attributes that may refer to a terminology (i.e., attributes where "ElementDefinition.type" = "Coding" or "ElementDefinition.type" = "CodeableConcept") in the FHIR release the resource conforms to. From these attributes, select those that don't present a "text" or a "display" and try to find the corresponding meaning for the combination of "system" and "code" attributes.
+4. For all resource instances present in the "entry" attribute: Count the number of instances that conform to each resource type. Calculate the percentage of each resource type.
+5. Identify all resource attributes whose values are references to other resource instances (i.e., attributes where "ElementDefinition.type" = "Reference") in the FHIR release the resource conforms to. Classify these references into the following categories: (a) relative references (e.g., "Patient/123"); (b) absolute references (e.g., https://hapi.fhir.org/baseR4/Patient/123); internal fragment reference (references started with the '#' character), and internal to the bundle references (references started with "urn:uuid"). Count the number of references by category. Calculate the percentage of each category.
+6. Identify all resource attributes whose values are references to other resource instances (i.e., attributes where "ElementDefinition.type" = "Reference") in the FHIR release the resource conforms to. Count the number of references that conform to each resource type. Calculate the percentage of each resource type.
 `;
 
 		// Retrieve the first text editor.
-		const allTabGroups = vscode.window.tabGroups.all;
-		if (allTabGroups.length === 0) {
-			vscode.window.showErrorMessage('No editor groups open.');
-			return;
-		}
-		const firstTabGroup = allTabGroups[0];
-		const firstEditorTab = firstTabGroup.tabs[0];
-		const textEditor = vscode.window.visibleTextEditors.find(editor => {
-			const input = firstEditorTab.input as vscode.TabInputText;
-			return editor.document.uri.toString() === input.uri.toString();
-		});
+		const firstTextEditor = getFirstTextEditor();
 
-		// If the editor exists, use it.
-		if (textEditor) {
+		if (firstTextEditor) {
 
 			// Retrieve content from the active text editor.
-			const documentText = textEditor.document.getText();
+			const documentText = firstTextEditor.document.getText();
 
 			try {
 
@@ -256,6 +159,59 @@ function getFirstTextEditor(): vscode.TextEditor | undefined {
 		return editor.document.uri.toString() === input.uri.toString();
 	});
 	return firstTextEditor;
+}
+
+// Generate the PlantUML diagram.
+async function generateDiagram(contentType: string) {
+
+	// Retrieve the first text editor.
+	const firstTextEditor = getFirstTextEditor();
+
+	// If the editor exists, use it.
+	if (firstTextEditor) {
+
+		// Retrieve content from the active text editor.
+		const documentText = firstTextEditor.document.getText();
+
+		try {
+
+			// Parse the retrieved content as JSON.
+			const jsonContent = JSON.parse(documentText);
+
+			// Proceed only if the JSON content has a 'resourceType' key.
+			let processResult = null;
+			if (jsonContent['resourceType']) {
+
+				// Process the resource content.
+				processResult = (contentType === 'resource' ? processResourceContent(jsonContent) : processResourceReferences(jsonContent));
+				
+				let plantUmlExt = vscode.extensions.getExtension('jebbs.plantuml');
+				if (plantUmlExt) {
+
+					// Create a new document with the generated content.
+					await vscode.workspace.openTextDocument({
+						content: processResult,
+						language: 'txt'
+					}).then(newDocument => {
+						vscode.window.showTextDocument(
+							newDocument, {
+								viewColumn: vscode.ViewColumn.Beside
+							}
+						).then(textEditor => {
+							vscode.commands.executeCommand('plantuml.preview');
+						});
+					});
+
+				} else {
+					vscode.window.showErrorMessage("The extension 'jebbs.plantuml' couldn't be opened!");
+				}
+
+			}
+
+		} catch(e: any) {
+			vscode.window.showErrorMessage(e.message);
+		}
+	}
 }
 
 // Process the resource content.

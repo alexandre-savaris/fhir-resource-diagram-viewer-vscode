@@ -16,37 +16,21 @@ export function activate(context: vscode.ExtensionContext) {
 	const disposable = vscode.commands.registerCommand('fhir-resource-diagram-viewer-vscode.viewContent', async () => {
 		// The code you place here will be executed every time your command is executed
 
-		// Common prompt fragment.
-		const COMMON_PROMPT_FRAGMENT = `
-You are a FHIR resource content analyzer.
-Your task is to analyze the content of a FHIR resource, extract relevant information, and generate a report from your analysis.
-The resource content is provided in JSON format.
-The resulting report must be formatted using markdown syntax.
-The analyses listed bellow must be executed in order. If it's not possible to execute an specific analysis, you must inform the user about the reasons.
-`;
-		const SINGLE_RESOURCE_PROMPT_FRAGMENT = `
-1. Analyze the resource content and, based on its structure, identify the FHIR release the resource conforms to. Answer only with the FHIR release and with the rationale for your choice.
-2. If the resource does not contain a narrative (e.g., the "text" attribute), generate one based on its content. The generated narrative must exclude all attributes whose "ElementDefinition.type" = "Reference" in the FHIR release the resource conforms to. From the remainder attributes, the generated narrative must include only the ones whose "ElementDefinition.isSummary" = true in the FHIR release the resource conforms to.
-3. Identify all resource attributes that may refer to a terminology (i.e., attributes where "ElementDefinition.type" = "Coding" or "ElementDefinition.type" = "CodeableConcept" in the FHIR release the resource conforms to). From these attributes, select those that don't present a "text" or a "display" and try to find the corresponding meaning for the combination of "system" and "code". Include the findings in the generated narrative.
-`;
-		const RESOURCE_BUNDLE_PROMPT_FRAGMENT = `
-1. Analyze the bundle content and, based on its structure, identify the FHIR release the component resources conform to. Answer only with the FHIR release and with the rationale for your choice.
-2. For each one of the resource instances that compose the Bundle: If the resource instance does not contain a narrative (e.g., the "text" attribute), generate one based on its content. The generated narrative must exclude all attributes whose "ElementDefinition.type" = "Reference" in the FHIR release the resource conforms to. From the remainder attributes, the generated narrative must include only the ones whose "ElementDefinition.isSummary" = true in the FHIR release the resource conforms to.
-3. For each one of the resource instances that compose the Bundle: Identify all resource attributes that may refer to a terminology (i.e., attributes where "ElementDefinition.type" = "Coding" or "ElementDefinition.type" = "CodeableConcept" in the FHIR release the resource conforms to). From these attributes, select those that don't present a "text" or a "display" and try to find the corresponding meaning for the combination of "system" and "code". Include the findings in the generated narrative.
-`;
+		// Retrieve the first text editor.
+		const firstTextEditor = getFirstTextEditor();
 
-		// If there is an active text editor, use it.
-		const activeTextEditor = vscode.window.activeTextEditor;
-		if (activeTextEditor) {
+		// If the editor exists, use it.
+		if (firstTextEditor) {
 
 			// Retrieve content from the active text editor.
-			const documentText = activeTextEditor.document.getText();
+			const documentText = firstTextEditor.document.getText();
 
 			try {
 
 				// Parse the retrieved content as JSON.
 				const jsonContent = JSON.parse(documentText);
 
+				// Proceed only if the JSON content has a 'resourceType' key.
 				let processResult = null;
 				if (jsonContent['resourceType']) {
 
@@ -70,59 +54,6 @@ The analyses listed bellow must be executed in order. If it's not possible to ex
 							});
 						});
 
-						// select the 4o chat model
-						let [model] = await vscode.lm.selectChatModels({
-							vendor: 'copilot',
-							family: 'gpt-4o'
-						});
-						// init the chat message
-						const messages = [
-							vscode.LanguageModelChatMessage.User(
-								COMMON_PROMPT_FRAGMENT
-								+ (jsonContent['resourceType'] === 'Bundle' ? RESOURCE_BUNDLE_PROMPT_FRAGMENT : SINGLE_RESOURCE_PROMPT_FRAGMENT)
-							),
-							vscode.LanguageModelChatMessage.User(documentText)
-						];
-						// make sure the model is available
-						if (model) {
-							// send the messages array to the model and get the response
-							let chatResponse = await model.sendRequest(
-								messages,
-								{},
-								new vscode.CancellationTokenSource().token
-							);
-							// show the response
-							let iteractionNumber = 0;
-							let textDocument = null;
-							for await (const fragment of chatResponse.text) {
-								iteractionNumber++;
-								if (iteractionNumber === 1) {
-									// Create a new document with the generated content.
-									textDocument = await vscode.workspace.openTextDocument({
-										content: fragment,
-										language: 'md'
-									});
-									await vscode.window.showTextDocument(
-										textDocument, {
-											viewColumn: vscode.ViewColumn.Beside
-										}
-									);
-								}
-								else {
-									// Append the fragment to the existing document.
-									if (textDocument) {
-										const edit = new vscode.WorkspaceEdit();
-										edit.insert(textDocument.uri, new vscode.Position(textDocument.lineCount, 0), fragment);
-										await vscode.workspace.applyEdit(edit);
-									}
-								}
-							}
-							// Open the markdown preview for the document.
-							if (textDocument) {
-								await vscode.commands.executeCommand("markdown.showPreview", textDocument.uri);
-							}
-						}
-
 					} else {
 						vscode.window.showErrorMessage("The extension 'jebbs.plantuml' couldn't be opened!");
 					}
@@ -141,12 +72,13 @@ The analyses listed bellow must be executed in order. If it's not possible to ex
 	const disposable2 = vscode.commands.registerCommand('fhir-resource-diagram-viewer-vscode.viewReferences', () => {
 		// The code you place here will be executed every time your command is executed
 
-		// If there is an active text editor, use it.
-		const activeTextEditor = vscode.window.activeTextEditor;
-		if (activeTextEditor) {
+		// Retrieve the first text editor.
+		const firstTextEditor = getFirstTextEditor();
+
+		if (firstTextEditor) {
 
 			// Retrieve content from the active text editor.
-			const documentText = activeTextEditor.document.getText();
+			const documentText = firstTextEditor.document.getText();
 
 			try {
 
@@ -237,7 +169,7 @@ The analyses listed bellow must be executed in order. If it's not possible to ex
 				// Parse the document text as JSON.
 				const jsonContent = JSON.parse(documentText);
 
-				// Only proceed if the JSON content has a 'resourceType' key.
+				// Proceed only if the JSON content has a 'resourceType' key.
 				if (jsonContent['resourceType']) {
 
 					// select the 4o chat model
@@ -308,6 +240,23 @@ The analyses listed bellow must be executed in order. If it's not possible to ex
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
+
+// Retrieve the first text editor.
+function getFirstTextEditor(): vscode.TextEditor | undefined {
+
+	const allTabGroups = vscode.window.tabGroups.all;
+	if (allTabGroups.length === 0) {
+		return undefined;
+	}
+
+	const firstTabGroup = allTabGroups[0];
+	const firstEditorTab = firstTabGroup.tabs[0];
+	const firstTextEditor = vscode.window.visibleTextEditors.find(editor => {
+		const input = firstEditorTab.input as vscode.TabInputText;
+		return editor.document.uri.toString() === input.uri.toString();
+	});
+	return firstTextEditor;
+}
 
 // Process the resource content.
 function processResourceContent(jsonContent: any) {

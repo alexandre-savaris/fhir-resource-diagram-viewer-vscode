@@ -217,8 +217,10 @@ async function generateDiagram(contentType: string) {
 // Process the resource content.
 function processResourceContent(jsonContent: any) {
 
+	const newJsonContent = limitJsonStringValues(jsonContent, 50);
+
 	return '@startjson\n'
-		+ JSON.stringify(jsonContent)
+		+ JSON.stringify(newJsonContent)
 		+ '\n@endjson';
 }
 
@@ -256,3 +258,32 @@ const dig = (obj: any, target: string): any =>
 		  if (acc !== undefined) { return acc; }
 		  if (typeof val === 'object') { return dig(val, target); }
 		}, undefined);
+
+// Limit the length of string values in a JSON object.
+// Adapted from Google Gemini.
+function limitJsonStringValues(obj: any, maxLength: number = 50): any {
+
+	if (typeof obj !== 'object' || obj === null) {
+		return obj; // Return non-objects and null as they are.
+	}
+
+	if (Array.isArray(obj)) {
+		return obj.map(item => limitJsonStringValues(item, maxLength)); // Recursively process array elements.
+	}
+
+	const newObj: { [key: string]: any } = {};
+	for (const key in obj) {
+		if (Object.prototype.hasOwnProperty.call(obj, key)) {
+			const value = obj[key];
+			if (typeof value === 'string' && value.length > maxLength) {
+				newObj[key] = value.substring(0, maxLength) + '...'; // Truncate string.
+			} else if (typeof value === 'object' && value !== null) {
+				newObj[key] = limitJsonStringValues(value, maxLength); // Recursively process nested objects.
+			} else {
+				newObj[key] = value; // Keep other types as they are.
+			}
+		}
+	}
+
+	return newObj;
+}

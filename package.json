@@ -1,9 +1,9 @@
 {
   "name": "fhir-resource-diagram-viewer-vscode",
-  "displayName": "FHIR® Viewer - Resources as Diagrams",
-  "description": "A VS Code extension for viewing FHIR® resource instances as diagrams.",
+  "displayName": "FHIR® LLM Analyzer and Diagram Viewer",
+  "description": "A VS Code extension for analyzing FHIR® resource instances using an LLM and viewing their content as diagrams.",
   "publisher": "alexandresavaris",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "SEE LICENSE IN LICENSE.txt",
   "homepage": "https://github.com/alexandre-savaris/fhir-resource-diagram-viewer-vscode/blob/main/README.md",
   "bugs": {
@@ -26,7 +26,9 @@
     "HL7®",
     "FHIR®",
     "Visualization",
-    "Diagram"
+    "Diagram",
+    "Analysis",
+    "LLM"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",

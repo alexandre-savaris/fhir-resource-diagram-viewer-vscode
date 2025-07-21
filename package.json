@@ -28,7 +28,9 @@
     "Visualization",
     "Diagram",
     "Analysis",
-    "LLM"
+    "AI",
+    "LLM",
+    "Copilot"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",

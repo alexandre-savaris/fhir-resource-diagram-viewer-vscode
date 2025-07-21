@@ -2,22 +2,31 @@
 A VS Code extension for analyzing FHIR® resource instances using an LLM and viewing their content as diagrams.
 
 ## Dependencies
-[PlantUML extension](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml) - for generating and previewing diagrams  
-[GitHub Copilot](https://github.com/features/copilot) - for analyzing resource contents using an LLM  
+[PlantUML extension](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml) - for generating and previewing diagrams.  
+[GitHub Copilot](https://github.com/features/copilot) - for analyzing resource contents using an LLM.  
 
-### About GitHub Copilot
+### Using GitHub Copilot
 1. You must [set up GitHub Copilot in VS Code](https://code.visualstudio.com/docs/copilot/setup) for using the LLM-based analysis feature.
-2. Stay alert to the [GitHub Copilot usage limits](https://docs.github.com/en/copilot/concepts/copilot-billing/about-individual-copilot-plans-and-benefits) that may restrict the use of the LLM-based analysis feature.
+2. Stay alert to the [GitHub Copilot usage limits](https://docs.github.com/en/copilot/concepts/copilot-billing/about-individual-copilot-plans-and-benefits) that may restrict the use of this functionality.
 
 ## Usage
 1. Open up a JSON file with the resource content.
 2. Execute one of the extension commands by using the Command Palette ("View/Command Palette..." or Ctrl+Shift+P).
     * "fhir-resource-diagram-viewer-vscode: View the resource content as a diagram" (for viewing all attributes).
     * "fhir-resource-diagram-viewer-vscode: View resource references as a diagram" (for viewing the "resourceType" attribute, the "id" attribute, and attributes with references).
-    * "fhir-resource-diagram-viewer-vscode: Analyze the resource content using an LLM" (for analyzing the resource content using GitHub Copilot).
+    * "fhir-resource-diagram-viewer-vscode: Analyze the resource content using an LLM" (for analyzing the resource content using an LLM via GitHub Copilot).
 3. View the PlantUML code and diagram generated from the original content or the resulting analysis from the LLM.
 
 ![Extension usage](resources/images/extension_usage.gif)
+
+### The resource content analysis using an LLM
+The analysis of the resource content is structured as follows.
+1. Identify the FHIR® release the resource conforms to.
+2. If the resource lacks a narrative, generate one based on the attributes marked as "summary".
+3. For terminology bindings, try to identify the meaning (i.e., "text" and/or "display") for attributes where this information is missing based on "system", "version", and "code".
+4. Classify and count references by resource type.
+5. If the resource whose content is being analyzed is a bundle, classify and count component resources by resource type.
+6. If the resource whose content is being analyzed is a bundle, classify and count references by reference type.
 
 ![Extension usage](resources/images/extension_usage_llm.gif)
 
